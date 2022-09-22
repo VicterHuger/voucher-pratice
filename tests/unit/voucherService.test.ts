@@ -1,24 +1,22 @@
 import voucherService from '../../src/services/voucherService';
 import voucherRepository from '../../src/repositories/voucherRepository';
 import { voucherFactory } from '../factories/voucherFactory';
+import { conflictError } from '../../src/utils/errorUtils';
 
 describe('Test createVoucher function in voucher service', () => {
-    // it('should return error conflict status if the voucher passed already exist', async () => {
+    it('should return error conflict status if the voucher passed already exist', async () => {
 
-    //     const voucherCreated = voucherFactory.createReturnVoucherFromPrisma();
+        const voucherCreated = voucherFactory.createReturnVoucherUsableFromPrisma();
 
-    //     jest.spyOn(voucherRepository, 'getVoucherByCode').mockResolvedValueOnce(voucherCreated);
+        jest.spyOn(voucherRepository, 'getVoucherByCode').mockResolvedValueOnce(voucherCreated);
 
-    //     try{
-    //         const result = await voucherService.createVoucher(voucherCreated.code, voucherCreated.discount);
+        try {
+            await voucherService.createVoucher(voucherCreated.code, voucherCreated.discount);
+        } catch (err) {
+            expect(err).toEqual(conflictError('Voucher already exist.'));
+        }
 
-    //     expect(result).toBe({ status: 409 }
-    //     );
-    //     }catch(err){
-    //         expect(err.code).toBe(409);
-    //     }
-
-    // });
+    });
 
     it('should return void response if a voucher to be created is correct', async () => {
         const { code, discount } = voucherFactory.createVoucher();
@@ -33,6 +31,21 @@ describe('Test createVoucher function in voucher service', () => {
 });
 
 describe('Test applyVoucher function on voucherService.ts file', () => {
+    it('should return error conflict message if the voucher does not  exist', async () => {
+        const amount = 10;
+        const voucherCreated = voucherFactory.createVoucher();
+
+        jest.spyOn(voucherRepository, 'getVoucherByCode').mockResolvedValueOnce(null);
+
+        try {
+            await voucherService.applyVoucher(voucherCreated.code, amount);
+        } catch (err) {
+            expect(err).toEqual(conflictError('Voucher does not exist.'));
+        }
+
+    });
+
+
     it('should return an object for a voucher that was not applied because the min amount is bigger than the amount passed', async () => {
 
         const amount = 50;
@@ -83,7 +96,9 @@ describe('Test applyVoucher function on voucherService.ts file', () => {
             applied: true
         });
 
-    })
+    });
+
+
 
 
 })
